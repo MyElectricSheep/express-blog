@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Benito Pepito",
+    "email": "benito@wbs.com",
+    "main_pic": "someone1.jpg",
+    "created_at": "some date"
+  },
+  {
+    "id": 2,
+    "name": "Daniel Mendoza",
+    "email": "daniel@wbs.com",
+    "main_pic": "someone2.jpg",
+    "created_at": "some date"
+  },
+  {
+    "id": 3,
+    "name": "Angela Litrico",
+    "email": "angela@wbs.com",
+    "main_pic": "someone3.jpg",
+    "created_at": "some date"
+  }
+]
