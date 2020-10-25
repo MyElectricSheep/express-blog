@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const posts = express.Router();
 const { body, validationResult } = require("express-validator");
-const { create, read, deleteData } = require("../utilities/utils");
+const { create, read, update } = require("../utilities/utils");
 // One way to get access to a JSON file is to require it... but it will be read only once when the app loads!
 // const mockPosts = require('../data/mockPosts.json')
 
@@ -11,6 +11,14 @@ const { create, read, deleteData } = require("../utilities/utils");
 
 const mockPostsPath = path.join(process.cwd(), "/data/mockPosts.json");
 const mockAuthorsPath = path.join(process.cwd(), "/data/mockAuthors.json");
+
+const postValidationSchema = [
+  body("title").not().isEmpty().isLength({ min: 5 }),
+  body("content").not().isEmpty().isLength({ min: 10 }),
+  body("author_id").not().isEmpty().isInt(),
+  body("main_pic").optional().isLength({ min: 2 }),
+  body("created_at").not().isEmpty().isDate(),
+];
 
 /* GET All Posts. Authors is an optional param that attaches the author info to each individual post */
 posts.get("/:authors?", async (req, res) => {
@@ -47,46 +55,34 @@ posts.get("/:authors?", async (req, res) => {
 
 // Using express-validator to check user input
 // https://express-validator.github.io/docs/index.html
-posts.post(
-  "/",
-  [
-    body("title").not().isEmpty().isLength({ min: 5 }),
-    body("content").not().isEmpty().isLength({ min: 10 }),
-    body("author_id").not().isEmpty().isInt(),
-    body("main_pic").optional().isLength({ min: 2 }),
-    body("created_at").not().isEmpty().isDate(),
-  ],
-  (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    read(mockAuthorsPath, ({ errors: authorErrors, data: authorData }) => {
-      if (authorErrors) return res.status(500).send(authorErrors.customMessage);
-      const author = authorData.find(
-        (author) => author.id === parseInt(req.body.author_id, 10)
-      );
-      if (!author) res.status(404).send("There's no author with that ID");
-      create(
-        mockPostsPath,
-        req.body,
-        ({ errors: postErrors, data: postData }) => {
-          if (postErrors) return res.status(500).send(postErrors.customMessage);
-          res.status(200).send(postData);
-        }
-      );
-    });
+posts.post("/", postValidationSchema, (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
   }
-);
+  read(mockAuthorsPath, ({ errors: authorErrors, data: authorData }) => {
+    if (authorErrors) return res.status(500).send(authorErrors.customMessage);
+    const author = authorData.find(
+      (author) => author.id === parseInt(req.body.author_id, 10)
+    );
+    if (!author) res.status(404).send("There's no author with that ID");
+    create(
+      mockPostsPath,
+      req.body,
+      ({ errors: postErrors, data: postData }) => {
+        if (postErrors) return res.status(500).send(postErrors.customMessage);
+        res.status(200).send(postData);
+      }
+    );
+  });
+});
 
 // DELETE SECTION
 posts.delete("/:id?", (req, res) => {
   if (!req.params.id)
     return res.status(400).send("An ID is required to delete a post");
-    console.log({mockPostsPath})
-    
+
   read(mockPostsPath, ({ errors: postErrors, data: postData }) => {
-    console.log({postErrors})
     if (postErrors) return res.status(500).send(postErrors.customMessage);
     const post = postData.find(
       (post) => post.id === parseInt(req.params.id, 10)
@@ -95,13 +91,45 @@ posts.delete("/:id?", (req, res) => {
     const filteredPosts = postData.filter(
       (post) => post.id !== parseInt(req.params.id, 10)
     );
-    deleteData(
+    update(
       mockPostsPath,
       filteredPosts,
       ({ errors: deleteErrors, data: deleteData }) => {
         if (deleteErrors)
           return res.status(500).send(deleteErrors.customMessage);
         res.status(200).send(post);
+      }
+    );
+  });
+});
+
+// UPDATE SECTION
+posts.put("/:id?", postValidationSchema, (req, res) => {
+  if (!req.params.id)
+    return res.status(400).send("An ID is required to update a post");
+
+  read(mockPostsPath, ({ errors: postErrors, data: postData }) => {
+    if (postErrors) return res.status(500).send(postErrors.customMessage);
+    let post = postData.find((post) => post.id === parseInt(req.params.id, 10));
+    if (!post) return res.status(404).send("No post matches the provided ID");
+    const filteredPosts = postData.filter(
+      (post) => post.id !== parseInt(req.params.id, 10)
+    );
+
+    post = {
+      ...post,
+      ...req.body,
+    };
+
+    filteredPosts.push(post);
+
+    update(
+      mockPostsPath,
+      filteredPosts,
+      ({ errors: updateErrors, data: updateData }) => {
+        if (updateErrors)
+          return res.status(500).send(deleteErrors.customMessage);
+        res.status(200).send(updateData);
       }
     );
   });

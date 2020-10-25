@@ -11,8 +11,7 @@ const errors = (msg, details) => {
 const read = async (path, callback) => {
   // The classic callback approach
   let result = {};
-  fs.readFile(path, 'utf8', (err, jsonString) => {
-    console.log({jsonString})
+  fs.readFile(path, "utf8", (err, jsonString) => {
     if (err) {
       result.errors = errors(
         "An error was encountered while accessing the resources",
@@ -28,7 +27,7 @@ const read = async (path, callback) => {
         "An error was encountered while parsing the resources",
         err
       );
-     callback(result);
+      callback(result);
     }
   });
 
@@ -60,39 +59,40 @@ const read = async (path, callback) => {
 
 const create = (path, newPost, callback) => {
   read(path, (postData) => {
-    if (postData.errors) return callback(postData)
-    newPost.id = postData.data.length + 1
-    postData.data.push(newPost)
-    fs.writeFile(path, JSON.stringify(postData.data), 'utf-8', (err) => {
-      if (err) { 
+    if (postData.errors) return callback(postData);
+    newPost.id = postData.data.length + 1;
+    postData.data.push(newPost);
+    fs.writeFile(path, JSON.stringify(postData.data), "utf-8", (err) => {
+      if (err) {
         postData.errors = errors(
-        "An error was encountered while writing new information to the target resource",
+          "An error was encountered while writing new information to the target resource",
+          err
+        );
+        return callback(postData);
+      }
+      console.log("Post created successfully!");
+      callback(postData);
+    });
+  });
+};
+
+// The update utility function works the same
+// for posts.delete and posts.update
+// and is used for both
+const update = (path, data, callback) => {
+  let result = {};
+  fs.writeFile(path, JSON.stringify(data), "utf-8", (err) => {
+    if (err) {
+      result.errors = errors(
+        "An error was encountered while updating data from the target resource",
         err
       );
-      return callback(postData);
-      }
-      console.log('Done!')
-      callback(postData)
-    })
-    
-  })
-}
-
-const deleteData = (path, data, callback) => {
-  let result = {};
-  fs.writeFile(path, JSON.stringify(data), 'utf-8', (err) => {
-    if (err) { 
-      result.errors = errors(
-      "An error was encountered while deleting data from the target resource",
-      err
-    );
-    return callback(result);
+      return callback(result);
     }
-    result.data = data
-    console.log('Deleted successfuly!')
-    callback(result)
-  })
-  
-}
+    result.data = data;
+    console.log("Updated successfully!");
+    callback(result);
+  });
+};
 
-module.exports = { read, create, deleteData }
+module.exports = { create, read, update };
