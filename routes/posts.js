@@ -20,6 +20,10 @@ const postValidationSchema = [
   body("created_at").not().isEmpty().isDate(),
 ];
 
+posts.get('/wesh', (req, res) => {
+  res.send('wfe')
+})
+
 /* GET All Posts. Authors is an optional param that attaches the author info to each individual post */
 posts.get("/:authors?", async (req, res) => {
   // Here read() is a reusable utility function that will use fs.readFile to access the file
